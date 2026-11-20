@@ -395,10 +395,15 @@ function showUpload(){
   });
 }
 function parseCSV(text){
-  const res = Papa.parse(text,{header:true,skipEmptyLines:true,transformHeader:h=>h.trim().toLowerCase()});
+  text = String(text).replace(/^﻿/,'');
+  const res = Papa.parse(text,{header:true,skipEmptyLines:true,transformHeader:h=>h.replace(/^﻿/,'').trim().toLowerCase().replace(/[\s%]+/g,'_').replace(/_+$/,'')});
   RAW = res.data;
   if(!RAW.length || !('season' in RAW[0]) || !('per' in RAW[0])){
-    const s=document.getElementById('status'); s.className='err'; s.innerHTML='<b>The CSV is missing expected columns (season, player, per, …).</b>'; return;
+    const found = res.meta && res.meta.fields ? res.meta.fields.slice(0,12).map(esc).join(', ') : 'none';
+    const first = esc(text.slice(0,120));
+    const s=document.getElementById('status'); s.className='err';
+    s.innerHTML='<b>The CSV is missing expected columns (season, player, per, …).</b><br>Rows read: '+RAW.length+'<br>Columns found: <code>'+found+'</code><br>Start of file: <code>'+first+'</code><br>If this looks like HTML or a short text pointer, the wrong file is being served.';
+    s.classList.remove('hidden'); return;
   }
   document.getElementById('status').classList.add('hidden');
   HAS_MP = 'mp' in RAW[0];
